@@ -1,0 +1,6 @@
+# Local dev data + secrets must never reach Vercel
+.data
+.vercel
+*.tsbuildinfo
+node_modules
+.next
