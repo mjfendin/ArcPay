@@ -5,7 +5,7 @@ import { useAccount, useConnect } from "wagmi";
 import { BrandHeader } from "@/components/brand-header";
 import { AutoSwitchNetwork } from "@/components/auto-switch-network";
 import { TokenAddressBar } from "@/components/token-address-bar";
-import { formatUsd, shortenAddress } from "@/lib/usdc";
+import { formatUsd, shortenAddress, displayUsdc } from "@/lib/usdc";
 import { getExplorerTxUrl, ACTIVE_NETWORK_LABEL } from "@/lib/arc";
 import type { PaymentLinkPublic } from "@/lib/types";
 
@@ -14,6 +14,7 @@ export default function DashboardPage() {
   const { connectors, connect, isPending: connecting } = useConnect();
   const [payments, setPayments] = useState<PaymentLinkPublic[]>([]);
   const [loading, setLoading] = useState(false);
+  const [arcpayPrice, setArcpayPrice] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -42,9 +43,33 @@ export default function DashboardPage() {
     };
   }, [address, isConnected]);
 
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/price")
+      .then((res) => res.json())
+      .then((data) => {
+        if (alive && data.priceUsd != null) {
+          setArcpayPrice(data.priceUsd);
+        }
+      })
+      .catch(() => {
+        if (alive) setArcpayPrice(null);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const paid = payments.filter((p) => p.status === "paid");
   const pending = payments.filter((p) => p.status === "pending");
-  const totalReceived = paid.reduce((sum, p) => sum + Number(p.amount), 0);
+  const totalReceivedUsd = paid.reduce((sum, p) => {
+    const n = Number(p.amount);
+    if (!Number.isFinite(n)) return sum;
+    if (p.currency === "ARCPAY") {
+      return sum + (arcpayPrice ? n * arcpayPrice : 0);
+    }
+    return sum + n;
+  }, 0);
 
   return (
     <div className="flex flex-col flex-1 items-center px-5">
@@ -100,7 +125,7 @@ export default function DashboardPage() {
                 <div className="card-surface p-5">
                   <p className="text-sm text-muted">Total received</p>
                   <p className="mt-2 text-2xl font-semibold tracking-tight">
-                    {formatUsd(totalReceived)} USDC
+                    {formatUsd(totalReceivedUsd)} USD
                   </p>
                   <p className="mt-1 text-sm text-muted">+{paid.length} payments</p>
                 </div>
@@ -153,7 +178,9 @@ export default function DashboardPage() {
                         {payments.map((p) => (
                           <tr key={p.id} className="border-b border-border last:border-0">
                             <td className="py-3 pr-4 font-semibold">
-                              {formatUsd(p.amount)}
+                              {p.currency === "ARCPAY"
+                                ? `${displayUsdc(p.amount)} ARCPAY`
+                                : formatUsd(p.amount)}
                             </td>
                             <td className="py-3 pr-4 text-muted">
                               {p.description || "—"}
