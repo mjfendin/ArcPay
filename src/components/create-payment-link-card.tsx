@@ -12,6 +12,8 @@ export function CreatePaymentLinkCard() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const isARCPAY = currency === "ARCPAY";
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -47,31 +49,39 @@ export function CreatePaymentLinkCard() {
       <div className="space-y-1">
         <h2 className="text-xl font-semibold tracking-tight">Request payment</h2>
         <p className="text-sm text-muted leading-relaxed">
-          Create a shareable USDC payment link. No account or wallet needed.
+          Create a shareable payment link for USDC or ARCPAY. No account or
+          wallet needed.
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <label className="block space-y-1.5">
           <span className="text-[13px] font-medium text-foreground/90">
-            Amount
+            {isARCPAY ? "Amount (ARCPAY)" : "Amount"}
           </span>
           <div className="relative">
-            <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[15px] font-medium text-muted select-none leading-none">
-              $
-            </span>
+            {!isARCPAY && (
+              <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[15px] font-medium text-muted select-none leading-none">
+                $
+              </span>
+            )}
             <input
               className="input-base h-11 tabular-nums"
-              style={{ paddingLeft: "2.5rem" }}
+              style={{ paddingLeft: isARCPAY ? "0.875rem" : "2.5rem" }}
               type="number"
-              step="0.01"
-              min="0.01"
-              placeholder="25.00"
+              step={isARCPAY ? "0.000001" : "0.001"}
+              min={isARCPAY ? "0.000001" : "0.001"}
+              placeholder={isARCPAY ? "385840" : "25.000"}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               required
             />
           </div>
+          <span className="block text-[11px] text-muted leading-snug">
+            {isARCPAY
+              ? "Enter the token amount directly."
+              : "Up to 6 decimals, e.g. 0.175."}
+          </span>
         </label>
 
         <label className="block space-y-1.5">
