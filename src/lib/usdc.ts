@@ -1,17 +1,33 @@
 import { parseUnits } from "viem";
 
 export const USDC_DECIMALS = 6;
+export const ARCPAY_DECIMALS = 18;
+
+/**
+ * Convert a human amount to raw units for the given currency.
+ * USDC uses 6 decimals; ARCPAY uses 18 decimals.
+ * Throws on invalid input — never silently produce a wrong transfer amount.
+ */
+export function amountToRaw(
+  amount: string | number,
+  currency: "USDC" | "ARCPAY" = "USDC",
+): bigint {
+  const s = typeof amount === "number" ? String(amount) : amount;
+  const decimals = currency === "ARCPAY" ? ARCPAY_DECIMALS : USDC_DECIMALS;
+  const maxFrac = decimals;
+  const pattern = new RegExp(`^\\d+(\\.\\d{1,${maxFrac}})?$`);
+  if (!pattern.test(s.trim())) {
+    throw new Error(`Invalid ${currency} amount`);
+  }
+  return parseUnits(s.trim(), decimals);
+}
 
 /**
  * Convert a human USDC amount ("25.00") to 6-decimal raw units.
  * Throws on invalid input — never silently produce a wrong transfer amount.
  */
 export function usdcToRaw(amount: string | number): bigint {
-  const s = typeof amount === "number" ? String(amount) : amount;
-  if (!/^\d+(\.\d{1,6})?$/.test(s.trim())) {
-    throw new Error("Invalid USDC amount");
-  }
-  return parseUnits(s.trim(), USDC_DECIMALS);
+  return amountToRaw(amount, "USDC");
 }
 
 /** Convert 6-decimal raw units back to a human string ("25.00"). */

@@ -3,7 +3,7 @@ import { getPaymentLink, updatePaymentLink } from "@/lib/store";
 import { toPublicPaymentLink } from "@/lib/types";
 import { confirmTransaction } from "@/lib/verify";
 import { dispatchWebhook } from "@/lib/webhook";
-import { usdcToRaw } from "@/lib/usdc";
+import { amountToRaw } from "@/lib/usdc";
 
 /**
  * POST /api/payments/[id]/confirm
@@ -43,7 +43,7 @@ export async function POST(
   }
 
   try {
-    const amountRaw = usdcToRaw(link.amount);
+    const amountRaw = amountToRaw(link.amount, link.currency);
     const result = await confirmTransaction(link, amountRaw, txHash as `0x${string}`);
 
     if (result.confirmed && result.matched) {

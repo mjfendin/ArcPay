@@ -3,7 +3,7 @@ import { getPaymentLink, updatePaymentLink } from "@/lib/store";
 import { toPublicPaymentLink } from "@/lib/types";
 import { verifyPayment } from "@/lib/verify";
 import { dispatchWebhook } from "@/lib/webhook";
-import { usdcToRaw } from "@/lib/usdc";
+import { amountToRaw } from "@/lib/usdc";
 
 /**
  * GET /api/payments/[id]/verify
@@ -23,7 +23,7 @@ export async function GET(
 
   if (link.status === "pending") {
     try {
-      const amountRaw = usdcToRaw(link.amount);
+      const amountRaw = amountToRaw(link.amount, link.currency);
       const result = await verifyPayment(link, amountRaw);
       if (result.paid) {
         const updated = await updatePaymentLink(id, {
